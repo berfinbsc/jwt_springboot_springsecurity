@@ -1,8 +1,9 @@
-package com.amigos.code.config;
+package com.spring.proje.config;
 
 
-import com.amigos.code.user.UserRepository;
+import com.spring.proje.repo.UserRepo;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -17,8 +18,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @Configuration
 @RequiredArgsConstructor
 public class ApplicationConfig {
-
-    private final UserRepository repository;
+@Autowired
+    private final UserRepo repository;
 
     @Bean
     public UserDetailsService userDetailsService() {

@@ -1,11 +1,13 @@
-package com.amigos.code.config;
+package com.spring.proje.config;
 
+import com.spring.proje.services.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,7 +21,9 @@ import java.io.IOException;
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+    @Autowired
     private final JwtService jwtService;
+    @Autowired
     private final UserDetailsService userDetailsService;
 
     @Override
@@ -28,12 +32,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
+
+
+        if (request.getServletPath().contains("/api/v1/auth")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+
         final String jwt;
         final String userEmail;
         final String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer")) {
             filterChain.doFilter(request, response);
+            return;
         }
 
 
@@ -46,18 +59,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
-            //jwt tarih kontrolü-jwtdeki user ile userDetails.getUser aynı mo kontrolü
+            //jwt tarih kontrolü-jwtdeki user ile userDetails.getUser aynı mı kontrolü
             if (jwtService.isTokenValid(jwt, userDetails)) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities()
                 );
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                authToken.setDetails(
+                        new WebAuthenticationDetailsSource().buildDetails(request));
                 // nesnesinin ayrıntılarını ayarlamak için kullanılır. Bu ayrıntılar, kimlik doğrulama bilgisini daha spesifik hale getirir ve güvenlik kontrolleri sırasında kullanılabilir.
                 SecurityContextHolder.getContext().setAuthentication(authToken);
                 //  Bu, kullanıcının oturum açtığını ve kimlik doğrulamasının başarılı olduğunu diğer parçalar için bildirir.            }
             }
         }
 
+        filterChain.doFilter(request, response);
 
     }
 }
+
